@@ -7,6 +7,7 @@ export interface Movie {
   overview: string;
   poster_path: string | null;
   backdrop_path: string | null;
+  profile_path?: string | null; // For people/actors
   release_date?: string; // Movies
   first_air_date?: string; // TV
   vote_average: number;
@@ -40,6 +41,21 @@ export interface CreditsResponse {
   cast: CastMember[];
 }
 
+export interface PersonDetails {
+  id: number;
+  name: string;
+  biography: string;
+  birthday: string | null;
+  place_of_birth: string | null;
+  profile_path: string | null;
+  known_for_department: string;
+}
+
+export interface PersonCredits {
+  id: number;
+  cast: Movie[];
+}
+
 export interface Video {
   key: string;
   site: string;
@@ -69,9 +85,8 @@ export interface ReviewResponse {
   total_results: number;
 }
 
-// Data structure for a booked ticket
 export interface TicketData {
-  id: string; // Order ID
+  id: string;
   movieId: number;
   movieTitle: string;
   posterPath: string | null;
@@ -82,41 +97,41 @@ export interface TicketData {
     hall: string;
     tech?: string;
   };
-  seats: { row: string; col: number; price: number }[];
+  seats: {
+    row: string;
+    col: number;
+    price: number;
+  }[];
   totalPrice: number;
   purchaseDate: string;
 }
 
-// Map for genre IDs to Hebrew names (TMDB returns IDs in list view)
 export const GENRES: Record<number, string> = {
-  // Movie Genres
-  28: "פעולה",
-  12: "הרפתקאות",
-  16: "אנימציה",
-  35: "קומדיה",
-  80: "פשע",
-  99: "דוקומנטרי",
-  18: "דרמה",
-  10751: "משפחה",
-  14: "פנטזיה",
-  36: "היסטוריה",
-  27: "אימה",
-  10402: "מוזיקה",
-  9648: "מסתורין",
-  10749: "רומנטיקה",
-  878: "מדע בדיוני",
-  10770: "סרט טלוויזיה",
-  53: "מותחן",
-  10752: "מלחמה",
-  37: "מערבון",
-  
-  // TV Genres
-  10759: "פעולה והרפתקאות",
-  10762: "ילדים",
-  10763: "חדשות",
-  10764: "ריאליטי",
-  10765: "מדע בדיוני ופנטזיה",
-  10766: "אופרת סבון",
-  10767: "תוכנית אירוח",
-  10768: "מלחמה ופוליטיקה"
+  28: 'פעולה',
+  12: 'הרפתקאות',
+  16: 'אנימציה',
+  35: 'קומדיה',
+  80: 'פשע',
+  99: 'דוקומנטרי',
+  18: 'דרמה',
+  10751: 'משפחה',
+  14: 'פנטזיה',
+  36: 'היסטוריה',
+  27: 'אימה',
+  10402: 'מוזיקה',
+  9648: 'מסתורין',
+  10749: 'רומנטיקה',
+  878: 'מדע בדיוני',
+  10770: 'סרט טלוויזיה',
+  53: 'מתח',
+  10752: 'מלחמה',
+  37: 'מערבון',
+  10759: 'פעולה והרפתקאות',
+  10762: 'ילדים',
+  10763: 'חדשות',
+  10764: 'ריאליטי',
+  10765: 'מדע בדיוני ופנטזיה',
+  10766: 'אופרת סבון',
+  10767: 'טוק שואו',
+  10768: 'מלחמה ופוליטיקה',
 };

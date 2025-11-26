@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Movie, TicketData } from '../types';
-import { CloseIcon, TicketIcon, PopcornIcon, ChevronRightIcon, ChevronLeftIcon, CreditCardIcon, CheckIcon, CalendarIcon } from './Icons';
+import { CloseIcon, CheckIcon, CalendarIcon, ChevronRightIcon, ChevronLeftIcon } from './Icons';
 import { generateShowtimes, generateSeatMap, formatPrice, saveTicket, Showtime, Seat, SNACKS } from '../services/mockBooking';
 import SeatMap from './SeatMap';
 import Ticket from './Ticket';
@@ -21,6 +21,19 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
   const [snackQuantities, setSnackQuantities] = useState<Record<string, number>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [ticketData, setTicketData] = useState<TicketData | null>(null);
+
+  // Payment State
+  const [paymentForm, setPaymentForm] = useState({
+    cardNumber: '',
+    expiry: '',
+    cvv: ''
+  });
+  const [formErrors, setFormErrors] = useState({
+    cardNumber: '',
+    expiry: '',
+    cvv: ''
+  });
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   // Initial Load
   useEffect(() => {
@@ -56,6 +69,77 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
     });
   };
 
+  // Payment Form Handlers
+  const handlePaymentInput = (field: keyof typeof paymentForm, value: string) => {
+    // Strip everything that is not a digit
+    const digitsOnly = value.replace(/\D/g, '');
+    
+    let formatted = digitsOnly;
+    
+    if (field === 'cardNumber') {
+      if (digitsOnly.length > 16) return; // Limit to 16 digits
+      // Add space every 4 digits
+      const parts = digitsOnly.match(/.{1,4}/g);
+      formatted = parts ? parts.join(' ') : digitsOnly;
+    } 
+    else if (field === 'expiry') {
+      if (digitsOnly.length > 4) return; // Limit MMYY
+      if (digitsOnly.length >= 2) {
+         formatted = `${digitsOnly.slice(0, 2)}/${digitsOnly.slice(2)}`;
+      }
+    }
+    else if (field === 'cvv') {
+      if (digitsOnly.length > 4) return;
+    }
+
+    setPaymentForm(prev => ({ ...prev, [field]: formatted }));
+    
+    // Clear error if exists
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validatePayment = () => {
+    let isValid = true;
+    const errors = { cardNumber: '', expiry: '', cvv: '' };
+
+    // Card Number (Simple check for 16 digits)
+    const cleanCard = paymentForm.cardNumber.replace(/\s/g, '');
+    if (cleanCard.length !== 16) {
+      errors.cardNumber = 'נא להזין מספר כרטיס תקין (16 ספרות)';
+      isValid = false;
+    }
+
+    // Expiry Date (Format and Past Date check)
+    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(paymentForm.expiry)) {
+      errors.expiry = 'תוקף לא תקין';
+      isValid = false;
+    } else {
+      const [month, yearStr] = paymentForm.expiry.split('/');
+      const year = 2000 + parseInt(yearStr);
+      const expiry = new Date(year, parseInt(month) - 1);
+      const now = new Date();
+      // End of month check
+      expiry.setMonth(expiry.getMonth() + 1);
+      expiry.setDate(0);
+      
+      if (expiry < now) {
+        errors.expiry = 'כרטיס פג תוקף';
+        isValid = false;
+      }
+    }
+
+    // CVV
+    if (paymentForm.cvv.length < 3) {
+      errors.cvv = '3-4 ספרות';
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
   const selectedSeats = seats.filter(s => s.status === 'selected');
   const seatsPrice = selectedSeats.reduce((sum, s) => sum + s.price, 0);
   
@@ -69,6 +153,9 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
 
   const handlePayment = () => {
     if (!selectedShowtime) return;
+    
+    if (!validatePayment()) return;
+
     setIsProcessing(true);
     
     // Simulate API call
@@ -128,7 +215,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md transition-all font-poppins" dir="rtl">
-      <div className="relative w-full max-w-4xl bg-[#0f172a] rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[90vh] border border-slate-700">
+      <div className="relative w-full max-w-4xl bg-[#0f172a] rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[90vh] border border-slate-700 animate-scaleIn">
         
         {/* Header */}
         <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-[#1e293b]/50">
@@ -239,7 +326,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
 
           {/* STEP 4: PAYMENT */}
           {step === 'payment' && (
-            <div className="animate-fadeIn max-w-md mx-auto">
+            <div className="animate-fadeIn max-w-lg mx-auto">
               <h3 className="text-2xl font-bold mb-8 text-center text-white">סיכום ותשלום</h3>
               
               {isProcessing ? (
@@ -247,52 +334,124 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
                   <div className="relative">
                      <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                      <div className="absolute inset-0 flex items-center justify-center">
-                        <CreditCardIcon className="w-6 h-6 text-blue-600" />
+                        <CheckIcon className="w-6 h-6 text-blue-600" />
                      </div>
                   </div>
                   <p className="text-blue-400 animate-pulse mt-6 font-bold">מאשר עסקה...</p>
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* Order Summary Card */}
-                  <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
-                    <div className="flex justify-between items-start mb-4 pb-4 border-b border-slate-700">
-                       <div>
-                          <h4 className="font-bold text-white text-lg">{title}</h4>
-                          <p className="text-slate-400 text-sm">{selectedShowtime?.date} • {selectedShowtime?.time}</p>
-                       </div>
-                       <div className="text-right">
-                          <span className="block font-black text-2xl text-white">{formatPrice(totalPrice)}</span>
-                       </div>
-                    </div>
+                  
+                  {/* Interactive Credit Card */}
+                  <div className="perspective-1000 w-full max-w-[340px] h-[200px] mx-auto mb-8 relative group">
+                      <div className={`relative w-full h-full transition-all duration-700 ${focusedField === 'cvv' ? '[transform:rotateY(180deg)]' : ''}`} style={{ transformStyle: 'preserve-3d' }}>
+                          
+                          {/* Front */}
+                          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-700 to-slate-900 rounded-2xl shadow-2xl p-6 text-white border border-slate-600 overflow-hidden [backface-visibility:hidden]">
+                              {/* Decoration */}
+                              <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
+                              <div className="absolute -left-10 bottom-0 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
+                              
+                              <div className="flex justify-between items-start mb-8">
+                                  <div className="w-12 h-8 bg-yellow-500/80 rounded flex items-center justify-center">
+                                      <div className="w-8 h-5 border border-yellow-700/50 opacity-50 rounded-sm"></div>
+                                  </div>
+                                  <div className="text-xl font-black italic opacity-50">VISA</div>
+                              </div>
 
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between text-slate-300">
-                         <span>{selectedSeats.length} x מושבים</span>
-                         <span>{formatPrice(seatsPrice)}</span>
+                              <div className="text-2xl font-mono tracking-widest mb-6 text-shadow-sm min-h-[32px] dir-ltr text-left">
+                                  {paymentForm.cardNumber || '#### #### #### ####'}
+                              </div>
+
+                              <div className="flex justify-between items-end">
+                                  <div>
+                                      <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">בעל הכרטיס</p>
+                                      <p className="font-bold tracking-wide text-sm">ISRAEL ISRAELI</p>
+                                  </div>
+                                  <div className="text-right">
+                                      <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">תוקף</p>
+                                      <p className="font-bold tracking-wide font-mono">{paymentForm.expiry || 'MM/YY'}</p>
+                                  </div>
+                              </div>
+                          </div>
+
+                          {/* Back */}
+                          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl border border-slate-600 overflow-hidden [transform:rotateY(180deg)] [backface-visibility:hidden]">
+                               <div className="w-full h-10 bg-black mt-6"></div>
+                               <div className="px-6 mt-6">
+                                   <div className="text-right text-xs text-slate-400 mb-1">CVV</div>
+                                   <div className="w-full bg-white text-slate-900 h-8 flex items-center justify-end px-3 font-mono font-bold tracking-widest">
+                                       {paymentForm.cvv || '***'}
+                                   </div>
+                               </div>
+                               <div className="absolute bottom-6 left-6 opacity-50">
+                                  <div className="text-xl font-black italic">VISA</div>
+                               </div>
+                          </div>
                       </div>
-                      <div className="text-xs text-slate-500 pr-4">
-                         {selectedSeats.map(s => `שורה ${s.row} כסא ${s.col}`).join(', ')}
-                      </div>
-                      
-                      {snacksPrice > 0 && (
-                        <div className="flex justify-between text-yellow-500 pt-2">
-                           <span>תוספות מזנון</span>
-                           <span>{formatPrice(snacksPrice)}</span>
-                        </div>
-                      )}
-                    </div>
                   </div>
 
                   {/* Payment Form */}
-                  <div className="space-y-4">
-                    <div className="relative">
-                       <CreditCardIcon className="absolute right-4 top-3.5 w-5 h-5 text-slate-400" />
-                       <input type="text" placeholder="מספר כרטיס אשראי" className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 pr-12 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition" />
+                  <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
+                    <div className="flex justify-between items-center mb-4 text-sm text-slate-300 border-b border-slate-700 pb-2">
+                         <span>סה"כ לתשלום</span>
+                         <span className="text-xl font-bold text-white">{formatPrice(totalPrice)}</span>
                     </div>
+
+                    <div className="relative">
+                       <input 
+                         type="text" 
+                         inputMode="numeric"
+                         value={paymentForm.cardNumber}
+                         onFocus={() => setFocusedField('cardNumber')}
+                         onBlur={() => setFocusedField(null)}
+                         onChange={(e) => handlePaymentInput('cardNumber', e.target.value)}
+                         placeholder="מספר כרטיס אשראי" 
+                         maxLength={19}
+                         dir="ltr"
+                         className={`w-full bg-slate-900 border rounded-xl p-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition
+                           ${formErrors.cardNumber ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-slate-700'}
+                         `}
+                       />
+                       {formErrors.cardNumber && <p className="text-red-500 text-xs mt-1 mr-1">{formErrors.cardNumber}</p>}
+                    </div>
+                    
                     <div className="flex gap-4">
-                      <input type="text" placeholder="תוקף (MM/YY)" className="w-1/2 bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm focus:border-blue-500 outline-none transition text-center" />
-                      <input type="text" placeholder="CVV" className="w-1/2 bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm focus:border-blue-500 outline-none transition text-center" />
+                      <div className="w-1/2">
+                        <input 
+                          type="text" 
+                          inputMode="numeric"
+                          value={paymentForm.expiry}
+                          onFocus={() => setFocusedField('expiry')}
+                          onBlur={() => setFocusedField(null)}
+                          onChange={(e) => handlePaymentInput('expiry', e.target.value)}
+                          placeholder="תוקף (MM/YY)" 
+                          maxLength={5}
+                          dir="ltr"
+                          className={`w-full bg-slate-900 border rounded-xl p-3 text-sm focus:border-blue-500 outline-none transition text-center
+                             ${formErrors.expiry ? 'border-red-500 focus:border-red-500' : 'border-slate-700'}
+                          `}
+                        />
+                        {formErrors.expiry && <p className="text-red-500 text-xs mt-1 text-center">{formErrors.expiry}</p>}
+                      </div>
+                      
+                      <div className="w-1/2">
+                        <input 
+                          type="text" 
+                          inputMode="numeric"
+                          value={paymentForm.cvv}
+                          onFocus={() => setFocusedField('cvv')}
+                          onBlur={() => setFocusedField(null)}
+                          onChange={(e) => handlePaymentInput('cvv', e.target.value)}
+                          placeholder="CVV" 
+                          maxLength={4}
+                          dir="ltr"
+                          className={`w-full bg-slate-900 border rounded-xl p-3 text-sm focus:border-blue-500 outline-none transition text-center
+                             ${formErrors.cvv ? 'border-red-500 focus:border-red-500' : 'border-slate-700'}
+                          `}
+                        />
+                        {formErrors.cvv && <p className="text-red-500 text-xs mt-1 text-center">{formErrors.cvv}</p>}
+                      </div>
                     </div>
                   </div>
 
@@ -326,7 +485,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
               {snacksPrice > 0 && (
                 <div className="mt-8 p-4 bg-yellow-900/10 border border-yellow-600/30 rounded-xl flex items-center gap-3 text-yellow-500 max-w-sm">
                    <div className="p-2 bg-yellow-600/20 rounded-full">
-                      <PopcornIcon className="w-5 h-5" />
+                      <div className="text-xl">🍿</div>
                    </div>
                    <span className="text-sm font-medium">יש לאסוף את המזנון מהקופה עם מספר ההזמנה.</span>
                 </div>

@@ -11,15 +11,15 @@ const SeatMap: React.FC<SeatMapProps> = ({ seats, onToggleSeat }) => {
   const rows = Array.from(new Set(seats.map(s => s.row)));
 
   return (
-    <div className="flex flex-col items-center w-full max-w-2xl mx-auto p-4">
+    <div className="flex flex-col items-center w-full max-w-2xl mx-auto p-4 overflow-x-auto no-scrollbar">
       {/* Screen Visual */}
-      <div className="w-full mb-12 flex flex-col items-center">
+      <div className="w-full min-w-[300px] mb-12 flex flex-col items-center">
          <div className="w-[80%] h-12 border-t-4 border-blue-500 rounded-t-[50%] shadow-[0_-10px_20px_rgba(59,130,246,0.2)] opacity-80"></div>
          <span className="text-xs text-blue-400/50 mt-2 uppercase tracking-[0.2em] font-poppins">SCREEN</span>
       </div>
 
       {/* Seats Grid */}
-      <div className="space-y-3">
+      <div className="space-y-3 min-w-[350px]">
         {rows.map(rowLabel => (
           <div key={rowLabel} className="flex items-center gap-4 justify-center">
             <span className="w-6 text-slate-500 text-xs font-mono font-bold">{rowLabel}</span>
@@ -52,7 +52,7 @@ const SeatMap: React.FC<SeatMapProps> = ({ seats, onToggleSeat }) => {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap justify-center gap-6 mt-12 text-xs text-slate-400 bg-slate-800/50 p-4 rounded-full border border-slate-700">
+      <div className="flex flex-wrap justify-center gap-6 mt-12 text-xs text-slate-400 bg-slate-800/50 p-4 rounded-full border border-slate-700 min-w-[300px]">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded-t-md bg-slate-700 border border-slate-600"></div>
           <span>רגיל (45₪)</span>

@@ -1,4 +1,4 @@
-import { MovieResponse, Movie, CreditsResponse, VideoResponse, ReviewResponse } from '../types';
+import { MovieResponse, Movie, CreditsResponse, VideoResponse, ReviewResponse, PersonDetails, PersonCredits } from '../types';
 
 // Credentials provided by user
 const API_READ_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIwMTQ5NTY1MGZkZjQyODVlMWRkODkwZmI2NzE3YTkzNSIsIm5iZiI6MTcwNjQzNjE2MS4zOTMsInN1YiI6IjY1YjYyNjQxYjExMzFmMDE0OTI5OWE2NyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.ONIiTtadCHzUtheCo7j4Xe6OKdhfsPs24FpFoash90U";
@@ -58,4 +58,8 @@ export const tmdbService = {
   getCredits: (id: number, type: 'movie' | 'tv' = 'movie') => fetchFromTMDB<CreditsResponse>(`/${type}/${id}/credits`),
   getVideos: (id: number, type: 'movie' | 'tv' = 'movie') => fetchFromTMDB<VideoResponse>(`/${type}/${id}/videos`, { language: 'en-US' }), // Videos often default to English if Hebrew missing
   getReviews: (id: number, type: 'movie' | 'tv' = 'movie') => fetchFromTMDB<ReviewResponse>(`/${type}/${id}/reviews`),
+
+  // People
+  getPersonDetails: (id: number) => fetchFromTMDB<PersonDetails>(`/person/${id}`),
+  getPersonCredits: (id: number) => fetchFromTMDB<PersonCredits>(`/person/${id}/combined_credits`),
 };
