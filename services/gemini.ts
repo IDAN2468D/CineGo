@@ -84,5 +84,26 @@ export const geminiService = {
       console.error("Gemini Summary Error:", error);
       return null;
     }
+  },
+
+  findPlaces: async (query: string): Promise<{ text: string; chunks: any[] }> => {
+    try {
+      const response = await genAI.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Find popular cinema locations and movie theaters in: ${query}. 
+        Provide a helpful response in Hebrew describing the top options.`,
+        config: {
+          tools: [{ googleMaps: {} }],
+        }
+      });
+
+      return {
+        text: response.text || "",
+        chunks: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
+      };
+    } catch (error) {
+      console.error("Gemini Maps Error:", error);
+      return { text: "שגיאה בחיפוש מיקומים. אנא נסה שנית.", chunks: [] };
+    }
   }
 };

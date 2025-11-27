@@ -7,9 +7,10 @@ import MovieCard from './components/MovieCard';
 import MovieModal from './components/MovieModal';
 import ActorModal from './components/ActorModal';
 import Ticket from './components/Ticket';
-import { SearchIcon, InfoIcon, PlayIcon, CloseIcon, SparklesIcon, ListIcon, ChevronLeftIcon, ChevronRightIcon, TicketIcon, HomeIcon, FilmIcon, TvIcon, FireIcon } from './components/Icons';
+import CinemaLocator from './components/CinemaLocator';
+import { SearchIcon, InfoIcon, PlayIcon, CloseIcon, SparklesIcon, ListIcon, ChevronLeftIcon, ChevronRightIcon, TicketIcon, HomeIcon, FilmIcon, TvIcon, FireIcon, MapIcon } from './components/Icons';
 
-type View = 'home' | 'tv' | 'movies' | 'new' | 'mylist' | 'tickets';
+type View = 'home' | 'tv' | 'movies' | 'new' | 'mylist' | 'tickets' | 'locations';
 
 interface RowData {
   title: string;
@@ -54,7 +55,12 @@ const App: React.FC = () => {
         let heroData: Movie[] = [];
         let newRows: RowData[] = [];
 
-        if (currentView === 'tickets') {
+        if (currentView === 'locations') {
+          // No standard movie data needed for locations view
+          setHeroMovies([]);
+          setRows([]);
+        }
+        else if (currentView === 'tickets') {
            setMyTickets(getMyTickets());
            setHeroMovies([]);
         }
@@ -123,7 +129,7 @@ const App: React.FC = () => {
         setRows(newRows);
         
         // Set Hero Movies (Top 5 items)
-        if (heroData.length > 0 && currentView !== 'tickets' && currentView !== 'mylist') {
+        if (heroData.length > 0 && currentView !== 'tickets' && currentView !== 'mylist' && currentView !== 'locations') {
           setHeroMovies(heroData.slice(0, 5));
           setCurrentHeroIndex(0);
         } else if (currentView === 'mylist' && heroData.length > 0) {
@@ -316,7 +322,7 @@ const App: React.FC = () => {
   const processedMyList = currentView === 'mylist' ? getProcessedMyList() : [];
   const activeHeroMovie = heroMovies[currentHeroIndex];
 
-  if (loading && rows.length === 0 && currentView !== 'mylist' && currentView !== 'tickets') {
+  if (loading && rows.length === 0 && currentView !== 'mylist' && currentView !== 'tickets' && currentView !== 'locations') {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-[#0f172a] text-blue-600">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-current"></div>
@@ -333,7 +339,7 @@ const App: React.FC = () => {
       <nav className={`fixed top-0 w-full z-40 transition-colors duration-500 ${isScrolled ? 'bg-[#0f172a]/90 backdrop-blur-md shadow-lg border-b border-white/5' : 'bg-gradient-to-b from-black/80 to-transparent'}`}>
         <div className="px-4 md:px-12 py-4 flex items-center justify-between">
           <div className="flex items-center gap-10">
-            <h1 onClick={() => handleNavClick('home')} className="text-2xl md:text-3xl font-black text-blue-500 cursor-pointer tracking-tighter font-poppins">CineGo</h1>
+            <h1 onClick={() => handleNavClick('home')} className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 cursor-pointer tracking-tighter font-poppins">CineMind AI</h1>
             <ul className="hidden md:flex gap-8 text-sm text-slate-300 font-medium">
               {[
                 { id: 'home', label: 'ראשי' },
@@ -341,6 +347,7 @@ const App: React.FC = () => {
                 { id: 'tv', label: 'סדרות' },
                 { id: 'new', label: 'חדש' },
                 { id: 'mylist', label: 'הרשימה שלי' },
+                { id: 'locations', label: 'בתי קולנוע' },
               ].map((item) => (
                 <li 
                   key={item.id}
@@ -465,7 +472,7 @@ const App: React.FC = () => {
           // Standard Views
           <>
             {/* Dynamic Slideshow Hero Section */}
-            {heroMovies.length > 0 && currentView !== 'tickets' && (
+            {heroMovies.length > 0 && currentView !== 'tickets' && currentView !== 'locations' && (
               <div className="relative h-[60vh] md:h-[80vh] w-full overflow-hidden" dir="rtl">
                 
                 {/* Background Images Layer */}
@@ -566,6 +573,9 @@ const App: React.FC = () => {
                      </div>
                   )}
                </div>
+            ) : currentView === 'locations' ? (
+               // LOCATIONS VIEW (NEW)
+               <CinemaLocator />
             ) : currentView === 'mylist' ? (
                // MY LIST VIEW WITH FILTERS
                <div className="relative z-10 -mt-12 md:-mt-20 px-4 md:px-12 pb-20 space-y-8" dir="rtl">
@@ -672,7 +682,7 @@ const App: React.FC = () => {
         <NavButton icon={<HomeIcon className="w-6 h-6" />} label="ראשי" active={currentView === 'home'} onClick={() => handleNavClick('home')} />
         <NavButton icon={<FilmIcon className="w-6 h-6" />} label="סרטים" active={currentView === 'movies'} onClick={() => handleNavClick('movies')} />
         <NavButton icon={<TvIcon className="w-6 h-6" />} label="סדרות" active={currentView === 'tv'} onClick={() => handleNavClick('tv')} />
-        <NavButton icon={<FireIcon className="w-6 h-6" />} label="חדש" active={currentView === 'new'} onClick={() => handleNavClick('new')} />
+        <NavButton icon={<MapIcon className="w-6 h-6" />} label="קולנוע" active={currentView === 'locations'} onClick={() => handleNavClick('locations')} />
         <NavButton icon={<TicketIcon className="w-6 h-6" />} label="כרטיסים" active={currentView === 'tickets'} onClick={() => handleNavClick('tickets')} />
       </div>
       
