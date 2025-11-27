@@ -181,10 +181,11 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, onClose, onUpdateList, o
                 {isPlaying && trailerKey ? (
                   <div className="relative w-full h-full">
                     <iframe 
-                      src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0&modestbranding=1&showinfo=0`}
+                      src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&rel=0&modestbranding=1&showinfo=0&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
                       title="Trailer"
                       className="w-full h-full"
                       allowFullScreen
+                      referrerPolicy="strict-origin-when-cross-origin"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     />
                      <a 
