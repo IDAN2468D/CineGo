@@ -24,6 +24,8 @@ const CINEMA_IMAGES = [
   'https://images.unsplash.com/photo-1524712245354-2c4e5e7121c0?auto=format&fit=crop&w=800&q=80', // Wide audience shot
 ];
 
+declare const L: any;
+
 const CinemaLocator: React.FC = () => {
   const [query, setQuery] = useState('בתי קולנוע מומלצים בישראל');
   const [results, setResults] = useState<{ text: string; chunks: any[] } | null>(null);
@@ -40,73 +42,34 @@ const CinemaLocator: React.FC = () => {
     handleSearch();
   }, []);
 
-  // 1. Initialize Map Instance (Run once)
+  // Initialize Leaflet Map
   useEffect(() => {
-    if (!mapContainerRef.current || mapInstanceRef.current || !(window as any).L) return;
+    if (mapContainerRef.current && !mapInstanceRef.current && typeof L !== 'undefined') {
+      mapInstanceRef.current = L.map(mapContainerRef.current).setView([31.5, 34.75], 8);
 
-    try {
-        const L = (window as any).L;
-        
-        // Initialize map
-        const map = L.map(mapContainerRef.current, {
-            zoomControl: false,
-            attributionControl: false
-        }).setView([31.5, 34.75], 8);
-        
-        mapInstanceRef.current = map;
+      // CartoDB Dark Matter Tiles (Free, nice dark theme)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+      }).addTo(mapInstanceRef.current);
 
-        // Add zoom control
-        L.control.zoom({ position: 'topleft' }).addTo(map);
-        
-        // Dark Matter Tile Layer
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
-            subdomains: 'abcd',
-            maxZoom: 19
-        }).addTo(map);
-
-        // Create a LayerGroup for markers to easily clear them later
-        const markersLayer = L.layerGroup().addTo(map);
-        markersLayerRef.current = markersLayer;
-
-        // Force a resize calculation after a short delay to ensure correct rendering
-        setTimeout(() => {
-           map.invalidateSize();
-        }, 100);
-
-    } catch (error) {
-        console.error("Error initializing map:", error);
+      markersLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
+      
+      // Fix map size on resize
+      setTimeout(() => {
+         mapInstanceRef.current.invalidateSize();
+      }, 100);
     }
+  }, []);
 
-    // Cleanup on unmount
-    return () => {
-        if (mapInstanceRef.current) {
-            mapInstanceRef.current.remove();
-            mapInstanceRef.current = null;
-            markersLayerRef.current = null;
-        }
-    };
-  }, []); // Empty dependency array - run once
-
-  // 2. Enrich Results with Mock Features
+  // Enrich Results
   useEffect(() => {
     if (results?.chunks) {
-      // Since real API doesn't return these specific tags, we mock them for the demo
-      // to make the filtering feature functional and demonstrable.
       const enriched = results.chunks.map(chunk => {
-         // Determine features based on some randomness + simple heuristics
-         const features = FILTERS.filter(f => {
-            // Give 40% chance for each feature to be present
-            return Math.random() > 0.6; 
-         }).map(f => f.id);
-         
-         // Ensure at least one feature
+         const features = FILTERS.filter(f => Math.random() > 0.6).map(f => f.id);
          if (features.length === 0) features.push(FILTERS[0].id);
-
-         return {
-            ...chunk,
-            features
-         };
+         return { ...chunk, features };
       });
       setProcessedChunks(enriched);
     } else {
@@ -120,11 +83,8 @@ const CinemaLocator: React.FC = () => {
       return activeFilters.every(filter => chunk.features.includes(filter));
   });
 
-  // Helper to get consistent random image
   const getCinemaImage = (title: string, apiPhotoUri?: string) => {
     if (apiPhotoUri) return apiPhotoUri;
-    
-    // Deterministic hash based on title
     let hash = 0;
     for (let i = 0; i < title.length; i++) {
       hash = title.charCodeAt(i) + ((hash << 5) - hash);
@@ -133,92 +93,59 @@ const CinemaLocator: React.FC = () => {
     return CINEMA_IMAGES[index];
   };
 
-  // 3. Update Markers when Filtered Results Change
+  // Update Markers
   useEffect(() => {
-    if (!mapInstanceRef.current || !markersLayerRef.current || !(window as any).L) return;
+    if (!mapInstanceRef.current || !markersLayerRef.current || typeof L === 'undefined') return;
 
-    const L = (window as any).L;
-    const markersLayer = markersLayerRef.current;
-    
-    // Clear existing markers
-    markersLayer.clearLayers();
+    markersLayerRef.current.clearLayers();
 
-    const bounds: any[] = [];
+    const bounds = L.latLngBounds();
+    let hasMarkers = false;
 
-    // Use filteredChunks instead of raw results
     filteredChunks.forEach((chunk) => {
         const mapData = chunk.maps || chunk.web;
         if (!mapData) return;
 
-        // Robust coordinate extraction
         const lat = mapData.center?.latitude || mapData.location?.latitude;
         const lng = mapData.center?.longitude || mapData.location?.longitude;
 
         if (lat && lng) {
+            hasMarkers = true;
             const title = mapData.title || "קולנוע";
             const address = mapData.address || "כתובת לא זמינה";
             const rating = mapData.rating;
-            
             const imgUrl = getCinemaImage(title, mapData.photos?.[0]?.image?.uri);
             const fallbackImg = CINEMA_IMAGES[0];
-
             const uri = mapData.uri || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(title)}`;
 
-            // Custom Pulsing Icon
-            const customIcon = L.divIcon({
-                className: 'custom-div-icon', // Empty class
-                html: `
-                  <div class="relative flex items-center justify-center w-10 h-10 group cursor-pointer -translate-x-1/2 -translate-y-1/2">
-                    <div class="absolute w-full h-full bg-blue-500/30 rounded-full animate-ping"></div>
-                    <div class="relative w-4 h-4 bg-blue-500 border-2 border-white rounded-full shadow-[0_0_15px_rgba(59,130,246,1)] transition-transform duration-300 group-hover:scale-125 z-10"></div>
-                  </div>
-                `,
-                iconSize: [40, 40],
-                iconAnchor: [20, 20],
-                popupAnchor: [0, -20]
-            });
-
-            // Feature badges HTML for popup
             const featureBadges = chunk.features.slice(0, 4).map((fid: string) => {
                 const f = FILTERS.find(filter => filter.id === fid);
                 return f ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-700/80 border border-slate-600 text-[9px] text-slate-200"><span>${f.icon}</span> ${f.label}</span>` : '';
             }).join('');
 
-            // Rich Popup Content
-            const popupContent = `
+            const contentString = `
                 <div class="font-heebo text-right w-full" dir="rtl">
-                    <!-- Image Header -->
                     <div class="relative h-32 w-full overflow-hidden">
-                         <img src="${imgUrl}" class="w-full h-full object-cover" alt="${title}" onerror="this.onerror=null;this.src='${fallbackImg}'" />
+                         <img src="${imgUrl}" class="w-full h-full object-cover" alt="${title}" onerror="this.src='${fallbackImg}'" />
                          <div class="absolute inset-0 bg-gradient-to-t from-[#1e293b] to-transparent opacity-90"></div>
-                         <div class="absolute bottom-3 right-3 text-white">
+                         <div class="absolute bottom-3 right-3 text-white z-10">
                             <h3 class="font-bold text-base leading-tight drop-shadow-md">${title}</h3>
                          </div>
                     </div>
-                    
-                    <!-- Content -->
-                    <div class="p-4 pt-3">
+                    <div class="p-4 pt-3 bg-[#1e293b]">
                         <div class="flex items-start justify-between mb-3">
                             <div class="flex items-start gap-1.5 text-xs text-slate-300 w-3/4">
                                <span class="mt-0.5">📍</span>
                                <span class="leading-tight">${address}</span>
                             </div>
-                            ${rating ? `
-                              <div class="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-1.5 py-0.5 rounded text-xs font-bold whitespace-nowrap">
-                                ★ ${rating}
-                              </div>
-                            ` : ''}
+                            ${rating ? `<div class="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-1.5 py-0.5 rounded text-xs font-bold whitespace-nowrap">★ ${rating}</div>` : ''}
                         </div>
-
-                        <!-- Amenities -->
                         <div class="mb-4">
                             <p class="text-[9px] text-slate-500 uppercase font-bold mb-1.5 tracking-wider">שירותים זמינים</p>
                             <div class="flex flex-wrap gap-1.5">
                                  ${featureBadges}
                             </div>
                         </div>
-
-                        <!-- Action Button -->
                         <a href="${uri}" target="_blank" class="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2.5 rounded-lg transition shadow-lg shadow-blue-500/20 no-underline">
                             <span>🚗</span>
                             נווט לקולנוע
@@ -227,20 +154,28 @@ const CinemaLocator: React.FC = () => {
                 </div>
             `;
 
-            const marker = L.marker([lat, lng], { icon: customIcon })
-                .bindPopup(popupContent);
-            
-            markersLayer.addLayer(marker);
-            bounds.push([lat, lng]);
+            // Custom Pulsing Icon
+            const icon = L.divIcon({
+                className: 'custom-div-icon',
+                html: "<div class='pulse-icon w-4 h-4'></div>",
+                iconSize: [16, 16],
+                iconAnchor: [8, 8],
+                popupAnchor: [0, -10]
+            });
+
+            const marker = L.marker([lat, lng], { icon })
+                .bindPopup(contentString);
+
+            markersLayerRef.current.addLayer(marker);
+            bounds.extend([lat, lng]);
         }
     });
 
-    // Adjust map view to fit markers
-    if (bounds.length > 0) {
+    if (hasMarkers && mapInstanceRef.current) {
         mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
     }
 
-  }, [filteredChunks]); 
+  }, [filteredChunks]);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -274,9 +209,19 @@ const CinemaLocator: React.FC = () => {
       const lng = mapData?.center?.longitude || mapData?.location?.longitude;
       
       if (lat && lng && mapInstanceRef.current) {
-          mapInstanceRef.current.flyTo([lat, lng], 15, {
-              duration: 1.5
-          });
+          mapInstanceRef.current.flyTo([lat, lng], 16, { duration: 1.5 });
+          
+          // Find and open popup - simplified for Leaflet
+          // Leaflet doesn't easily expose finding marker by latlng in layergroup without iteration
+          // But visually flying there is the main feedback
+          
+          // Optional: iterate and open popup
+           markersLayerRef.current.eachLayer((layer: any) => {
+              const mLatLng = layer.getLatLng();
+              if (Math.abs(mLatLng.lat - lat) < 0.0001 && Math.abs(mLatLng.lng - lng) < 0.0001) {
+                  layer.openPopup();
+              }
+           });
       }
   };
 
@@ -447,14 +392,9 @@ const CinemaLocator: React.FC = () => {
                 ) : null}
             </div>
 
-            {/* Right Side: Map */}
-            <div className="lg:w-2/3 h-[400px] lg:h-[600px] rounded-3xl overflow-hidden border border-slate-700 shadow-2xl relative order-1 lg:order-2 group/map">
-                {/* Always render map container */}
+            {/* Right Side: Leaflet Map */}
+            <div className="lg:w-2/3 h-[400px] lg:h-[600px] rounded-3xl overflow-hidden border border-slate-700 shadow-2xl relative order-1 lg:order-2">
                 <div ref={mapContainerRef} className="w-full h-full bg-slate-900 z-0" />
-                
-                <div className="absolute top-4 right-4 bg-slate-900/90 backdrop-blur text-xs px-3 py-1 rounded-full border border-slate-700 z-[400] text-slate-400 shadow-lg pointer-events-none">
-                    Map View
-                </div>
             </div>
 
         </div>

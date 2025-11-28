@@ -5,9 +5,27 @@ import { getImageUrl } from '../services/tmdb';
 interface CastListProps {
   cast: CastMember[];
   onActorClick?: (actorId: number) => void;
+  loading?: boolean;
 }
 
-const CastList: React.FC<CastListProps> = ({ cast, onActorClick }) => {
+const CastList: React.FC<CastListProps> = ({ cast, onActorClick, loading }) => {
+  if (loading) {
+     return (
+        <div className="mt-8">
+           <div className="h-6 w-32 bg-slate-700/50 rounded mb-4 animate-pulse ml-auto"></div>
+           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
+              {[...Array(5)].map((_, i) => (
+                 <div key={i} className="flex-shrink-0 w-24 text-center">
+                    <div className="w-24 h-24 rounded-full bg-slate-700/50 animate-pulse mb-2 mx-auto"></div>
+                    <div className="h-3 w-16 bg-slate-700/50 rounded mx-auto mb-1"></div>
+                    <div className="h-2 w-12 bg-slate-700/50 rounded mx-auto"></div>
+                 </div>
+              ))}
+           </div>
+        </div>
+     );
+  }
+
   if (!cast || cast.length === 0) return null;
 
   return (
