@@ -1,7 +1,7 @@
 import { MovieResponse, Movie, CreditsResponse, VideoResponse, ReviewResponse, PersonDetails, PersonCredits } from '../types';
 
-// Credentials provided by user
-const API_READ_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIwMTQ5NTY1MGZkZjQyODVlMWRkODkwZmI2NzE3YTkzNSIsIm5iZiI6MTcwNjQzNjE2MS4zOTMsInN1YiI6IjY1YjYyNjQxYjExMzFmMDE0OTI5OWE2NyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.ONIiTtadCHzUtheCo7j4Xe6OKdhfsPs24FpFoash90U";
+// Credentials provided by user or environment
+const API_READ_ACCESS_TOKEN = process.env.TMDB_ACCESS_TOKEN || "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIwMTQ5NTY1MGZkZjQyODVlMWRkODkwZmI2NzE3YTkzNSIsIm5iZiI6MTcwNjQzNjE2MS4zOTMsInN1YiI6IjY1YjYyNjQxYjExMzFmMDE0OTI5OWE2NyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.ONIiTtadCHzUtheCo7j4Xe6OKdhfsPs24FpFoash90U";
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
