@@ -32,6 +32,11 @@ const App: React.FC = () => {
   // Search & Modal State
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchPage, setSearchPage] = useState(1);
+  const [totalSearchPages, setTotalSearchPages] = useState(0);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
+  const [isMoreLoading, setIsMoreLoading] = useState(false);
+  
   const [isScrolled, setIsScrolled] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [selectedActorId, setSelectedActorId] = useState<number | null>(null);
@@ -175,17 +180,23 @@ const App: React.FC = () => {
 
     if (searchQuery.trim().length > 1) {
       const timer = setTimeout(() => {
-        tmdbService.searchMovies(searchQuery).then(res => {
+        setIsSearchLoading(true);
+        tmdbService.searchMovies(searchQuery, 1).then(res => {
           if (res && res.results) {
             // Filter out people, only show movies/tv
             const validResults = res.results.filter(item => item.media_type !== 'person' && item.poster_path);
             setSearchResults(validResults);
+            setSearchPage(1);
+            setTotalSearchPages(res.total_pages);
           }
-        }).catch(console.error);
+        })
+        .catch(console.error)
+        .finally(() => setIsSearchLoading(false));
       }, 500);
       return () => clearTimeout(timer);
     } else {
       setSearchResults([]);
+      setTotalSearchPages(0);
     }
   }, [searchQuery, isAiMode]);
 
@@ -225,6 +236,24 @@ const App: React.FC = () => {
       console.error("AI Search failed", error);
     } finally {
       setIsAiLoading(false);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (isMoreLoading || searchPage >= totalSearchPages) return;
+    
+    setIsMoreLoading(true);
+    try {
+      const nextPage = searchPage + 1;
+      const res = await tmdbService.searchMovies(searchQuery, nextPage);
+      const newResults = res.results.filter(item => item.media_type !== 'person' && item.poster_path);
+      
+      setSearchResults(prev => [...prev, ...newResults]);
+      setSearchPage(nextPage);
+    } catch (error) {
+      console.error("Failed to load more results", error);
+    } finally {
+      setIsMoreLoading(false);
     }
   };
 
@@ -337,9 +366,9 @@ const App: React.FC = () => {
       
       {/* Navbar */}
       <nav className={`fixed top-0 w-full z-40 transition-colors duration-500 ${isScrolled ? 'bg-[#0f172a]/90 backdrop-blur-md shadow-lg border-b border-white/5' : 'bg-gradient-to-b from-black/80 to-transparent'}`}>
-        <div className="px-4 md:px-12 py-4 flex items-center justify-between">
+        <div className="px-4 md:px-12 py-3 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-10">
-            <h1 onClick={() => handleNavClick('home')} className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 cursor-pointer tracking-tighter font-poppins">CineMind AI</h1>
+            <h1 onClick={() => handleNavClick('home')} className="text-xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 cursor-pointer tracking-tighter font-poppins">CineMind AI</h1>
             <ul className="hidden md:flex gap-8 text-sm text-slate-300 font-medium">
               {[
                 { id: 'home', label: 'ראשי' },
@@ -364,7 +393,7 @@ const App: React.FC = () => {
             </ul>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 md:gap-6">
              {/* My Tickets Button */}
             <button 
               onClick={() => handleNavClick('tickets')}
@@ -392,9 +421,9 @@ const App: React.FC = () => {
                 
                 <input 
                   type="text" 
-                  placeholder={isAiMode ? "נסה: סרטי אימה פסיכולוגיים..." : "חיפוש..."}
+                  placeholder={isAiMode ? "נסה: סרטי אימה..." : "חיפוש..."}
                   className={`bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none transition-all duration-300 
-                    ${searchQuery || isAiMode ? 'w-48 sm:w-64 opacity-100 pl-2' : 'w-0 opacity-0 group-hover:w-48 group-hover:opacity-100'}`}
+                    ${searchQuery || isAiMode ? 'w-36 sm:w-64 opacity-100 pl-2' : 'w-0 opacity-0 group-hover:w-36 sm:group-hover:w-48 group-hover:opacity-100'}`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -421,7 +450,7 @@ const App: React.FC = () => {
           // Search Results View
           <div className="pt-32 px-4 md:px-12 min-h-screen" dir="rtl">
              <div className="flex items-center gap-4 mb-8">
-               <h2 className="text-2xl text-slate-400">
+               <h2 className="text-xl md:text-2xl text-slate-400">
                  {isAiMode ? (
                    <span className="flex items-center gap-2">
                      המלצות Gemini עבור: <span className="text-purple-400 font-bold">{searchQuery}</span>
@@ -433,7 +462,7 @@ const App: React.FC = () => {
                </h2>
              </div>
              
-             {isAiLoading ? (
+             {isAiLoading || (isSearchLoading && searchResults.length === 0) ? (
                <div className="flex flex-col items-center justify-center py-32 min-h-[50vh] animate-fadeIn">
                  <div className="relative w-24 h-24 mb-8">
                     {/* Pulsing Background */}
@@ -451,17 +480,44 @@ const App: React.FC = () => {
                  
                  <div className="text-center space-y-2">
                     <h3 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 animate-pulse">
-                      Gemini עובד על זה...
+                      {isAiMode ? 'Gemini עובד על זה...' : 'מחפש...'}
                     </h3>
-                    <p className="text-slate-400 text-lg">מנתח את הבקשה שלך וסורק את מאגר הסרטים</p>
+                    <p className="text-slate-400 text-lg">
+                      {isAiMode ? 'מנתח את הבקשה שלך וסורק את מאגר הסרטים' : 'מאתר את הכותרים המבוקשים'}
+                    </p>
                  </div>
                </div>
              ) : searchResults.length > 0 ? (
-               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                 {searchResults.map(movie => (
-                   movie.poster_path && <MovieCard key={movie.id} movie={movie} onClick={handleMovieClick} />
-                 ))}
-               </div>
+               <>
+                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+                   {searchResults.map((movie, index) => (
+                     movie.poster_path && <MovieCard key={`${movie.id}-${index}`} movie={movie} onClick={handleMovieClick} />
+                   ))}
+                 </div>
+                 
+                 {!isAiMode && searchPage < totalSearchPages && (
+                    <div className="mt-12 mb-20 flex justify-center">
+                       <button 
+                         onClick={handleLoadMore}
+                         disabled={isMoreLoading}
+                         className="flex items-center gap-3 px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-full transition-all duration-300 border border-slate-600 hover:border-blue-500 shadow-lg group"
+                       >
+                         {isMoreLoading ? (
+                           <>
+                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                             <span>טוען תוצאות...</span>
+                           </>
+                         ) : (
+                           <>
+                             <span>טען עוד תוצאות</span>
+                             <span className="text-slate-500 group-hover:text-blue-400 text-xs font-normal">({searchResults.length} מתוך {totalSearchPages * 20})</span>
+                             <ChevronLeftIcon className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                           </>
+                         )}
+                       </button>
+                    </div>
+                 )}
+               </>
              ) : (
                <p className="text-slate-500 text-lg">
                  {isAiMode ? 'לא נמצאו המלצות. נסה לתאר את הבקשה אחרת.' : 'לא נמצאו תוצאות.'}
@@ -473,7 +529,7 @@ const App: React.FC = () => {
           <>
             {/* Dynamic Slideshow Hero Section */}
             {heroMovies.length > 0 && currentView !== 'tickets' && currentView !== 'locations' && (
-              <div className="relative h-[60vh] md:h-[80vh] w-full overflow-hidden" dir="rtl">
+              <div className="relative h-[65vh] md:h-[80vh] w-full overflow-hidden" dir="rtl">
                 
                 {/* Background Images Layer */}
                 {heroMovies.map((movie, index) => (
@@ -494,10 +550,10 @@ const App: React.FC = () => {
 
                 {/* Content Layer (Top-Right) */}
                 {/* Use key to force re-animation when slide changes */}
-                <div key={activeHeroMovie?.id} className="absolute top-[20%] md:top-[25%] right-[5%] md:right-[8%] max-w-2xl space-y-6 z-20 animate-fadeIn">
+                <div key={activeHeroMovie?.id} className="absolute top-[20%] md:top-[25%] right-[5%] md:right-[8%] max-w-2xl space-y-4 md:space-y-6 z-20 animate-fadeIn pl-4">
                    {activeHeroMovie && (
                      <>
-                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-black drop-shadow-xl leading-tight text-white font-poppins">
+                        <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black drop-shadow-xl leading-tight text-white font-poppins">
                           {getHeroTitle(activeHeroMovie)}
                         </h1>
                         
@@ -506,23 +562,23 @@ const App: React.FC = () => {
                            <span>{activeHeroMovie.release_date?.split('-')[0] || activeHeroMovie.first_air_date?.split('-')[0]}</span>
                         </div>
 
-                        <p className="text-base md:text-xl text-shadow-md line-clamp-3 text-slate-200 font-light leading-relaxed max-w-xl">
+                        <p className="text-sm md:text-xl text-shadow-md line-clamp-3 text-slate-200 font-light leading-relaxed max-w-xl">
                           {activeHeroMovie.overview || "תקציר לא זמין."}
                         </p>
                         
                         <div className="flex items-center gap-4 pt-4">
                           <button 
                             onClick={() => handleMovieClick(activeHeroMovie)}
-                            className="flex items-center gap-2 bg-blue-600 text-white px-8 py-3.5 rounded-xl hover:bg-blue-500 transition text-base font-bold shadow-lg shadow-blue-900/40"
+                            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 md:px-8 md:py-3.5 rounded-xl hover:bg-blue-500 transition text-sm md:text-base font-bold shadow-lg shadow-blue-900/40"
                           >
-                            <PlayIcon className="w-6 h-6" />
+                            <PlayIcon className="w-5 h-5 md:w-6 md:h-6" />
                             <span>הזמן כרטיסים</span>
                           </button>
                           <button 
                             onClick={() => handleMovieClick(activeHeroMovie)}
-                            className="flex items-center gap-2 bg-slate-500/30 text-white px-8 py-3.5 rounded-xl hover:bg-slate-500/50 transition text-base font-bold backdrop-blur-md border border-white/10"
+                            className="flex items-center gap-2 bg-slate-500/30 text-white px-6 py-2.5 md:px-8 md:py-3.5 rounded-xl hover:bg-slate-500/50 transition text-sm md:text-base font-bold backdrop-blur-md border border-white/10"
                           >
-                            <InfoIcon className="w-6 h-6" />
+                            <InfoIcon className="w-5 h-5 md:w-6 md:h-6" />
                             <span>מידע נוסף</span>
                           </button>
                         </div>
@@ -530,15 +586,17 @@ const App: React.FC = () => {
                    )}
                 </div>
 
-                {/* Navigation Dots */}
+                {/* Styled Pagination Dots - Raised to avoid overlap with rows */}
                 {heroMovies.length > 1 && (
-                  <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 flex gap-3">
+                  <div className="absolute bottom-24 md:bottom-32 left-1/2 transform -translate-x-1/2 z-30 flex items-center gap-3 p-2 rounded-full bg-black/20 backdrop-blur-sm border border-white/5">
                     {heroMovies.map((_, idx) => (
                       <button 
                         key={idx}
                         onClick={() => setCurrentHeroIndex(idx)}
-                        className={`h-2 rounded-full transition-all duration-300 shadow-sm
-                          ${idx === currentHeroIndex ? 'w-8 bg-blue-500' : 'w-2 bg-slate-400/50 hover:bg-white'}`}
+                        className={`transition-all duration-300 rounded-full cursor-pointer
+                          ${idx === currentHeroIndex 
+                            ? 'w-8 h-2 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' 
+                            : 'w-2 h-2 bg-slate-400/50 hover:bg-white hover:scale-125'}`}
                         aria-label={`Go to slide ${idx + 1}`}
                       />
                     ))}
@@ -557,7 +615,7 @@ const App: React.FC = () => {
                             <TicketIcon className="w-10 h-10 opacity-50" />
                         </div>
                         <p className="text-2xl font-bold text-slate-300">האולם מחכה לך!</p>
-                        <p className="mt-2 text-slate-500 max-w-md text-center">טרם הוזמנו כרטיסים. זה הזמן לבחור סרט, לתפוס את המושבים הטובים ביותר וליהנות מהחוויה.</p>
+                        <p className="mt-2 text-slate-500 max-w-md text-center px-4">טרם הוזמנו כרטיסים. זה הזמן לבחור סרט, לתפוס את המושבים הטובים ביותר וליהנות מהחוויה.</p>
                         <button 
                           onClick={() => handleNavClick('home')} 
                           className="mt-8 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold shadow-lg shadow-blue-900/20 transition-transform transform hover:-translate-y-1"
@@ -640,7 +698,7 @@ const App: React.FC = () => {
                         )}
                      </div>
                   ) : (
-                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
                         {processedMyList.map(movie => (
                            <MovieCard key={movie.id} movie={movie} onClick={handleMovieClick} />
                         ))}
@@ -678,7 +736,7 @@ const App: React.FC = () => {
       )}
 
       {/* Bottom Navigation for Mobile */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0f172a]/95 backdrop-blur-lg border-t border-white/10 p-2 md:hidden z-50 flex justify-around items-center safe-area-pb">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0f172a]/95 backdrop-blur-lg border-t border-white/10 p-2 md:hidden z-50 flex justify-around items-center safe-area-pb shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
         <NavButton icon={<HomeIcon className="w-6 h-6" />} label="ראשי" active={currentView === 'home'} onClick={() => handleNavClick('home')} />
         <NavButton icon={<FilmIcon className="w-6 h-6" />} label="סרטים" active={currentView === 'movies'} onClick={() => handleNavClick('movies')} />
         <NavButton icon={<TvIcon className="w-6 h-6" />} label="סדרות" active={currentView === 'tv'} onClick={() => handleNavClick('tv')} />
@@ -730,31 +788,32 @@ const Row: React.FC<{ title: string, movies: Movie[], variant?: 'ranked' | 'stan
   
   return (
     <div className="space-y-4 px-4 md:px-0 group/row">
-      <h2 className="text-xl md:text-2xl font-bold text-slate-100 flex items-center gap-2 cursor-pointer hover:text-blue-500 transition w-fit font-poppins">
+      <h2 className="text-lg md:text-2xl font-bold text-slate-100 flex items-center gap-2 cursor-pointer hover:text-blue-500 transition w-fit font-poppins">
         {title}
         <ChevronLeftIcon className="w-4 h-4 opacity-0 group-hover/row:opacity-100 transition-opacity -translate-x-2 group-hover/row:translate-x-0" />
       </h2>
       <div className="relative group">
         
+        {/* Right Arrow (Scrolls to start in RTL) */}
         <div 
-            className={`hidden md:flex absolute top-0 bottom-0 right-0 z-40 m-auto h-full w-12 cursor-pointer bg-gradient-to-l from-transparent to-black/80 items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 ${!isMoved ? 'hidden' : ''}`}
+            className={`hidden md:flex absolute top-0 bottom-0 right-0 z-40 m-auto h-full w-12 cursor-pointer bg-gradient-to-l from-transparent to-black/80 items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 hover:w-16 ${!isMoved ? 'hidden' : ''}`}
             onClick={() => handleClick('right')}
         >
-            <ChevronRightIcon className="w-8 h-8 text-white hover:scale-110 transition" />
+            <ChevronRightIcon className="w-8 h-8 text-white hover:scale-125 transition drop-shadow-lg" />
         </div>
 
         <div 
             ref={rowRef}
-            className="flex gap-4 overflow-x-scroll no-scrollbar scroll-smooth py-4 px-2 -mx-2 items-center"
+            className="flex gap-3 md:gap-4 overflow-x-scroll no-scrollbar scroll-smooth py-4 px-2 -mx-2 items-center"
         >
           {movies.map((movie, index) => (
-            <div key={movie.id} className={`relative flex-shrink-0 ${variant === 'ranked' ? 'w-[300px] md:w-[360px]' : 'w-[120px] md:w-[150px]'}`}>
+            <div key={movie.id} className={`relative flex-shrink-0 ${variant === 'ranked' ? 'w-[280px] md:w-[360px]' : 'w-[110px] md:w-[150px]'}`}>
                {variant === 'ranked' ? (
                  <div className="flex items-center gap-4 group cursor-pointer" onClick={() => onMovieClick(movie)}>
-                    <span className="text-[140px] font-black text-[#0f172a] opacity-80" style={{ WebkitTextStroke: '2px #475569', lineHeight: 0.8 }}>
+                    <span className="text-[100px] md:text-[140px] font-black text-[#0f172a] opacity-80" style={{ WebkitTextStroke: '2px #475569', lineHeight: 0.8 }}>
                        {index + 1}
                     </span>
-                    <div className="w-[180px] aspect-[2/3] rounded-md overflow-hidden shadow-lg transition-transform duration-300 group-hover:scale-105 group-hover:z-10 bg-zinc-800">
+                    <div className="w-[140px] md:w-[180px] aspect-[2/3] rounded-md overflow-hidden shadow-lg transition-transform duration-300 group-hover:scale-105 group-hover:z-10 bg-zinc-800">
                        <img
                          src={getImageUrl(movie.poster_path, 'w500')}
                          alt={movie.title}
@@ -770,11 +829,12 @@ const Row: React.FC<{ title: string, movies: Movie[], variant?: 'ranked' | 'stan
           ))}
         </div>
 
+        {/* Left Arrow (Scrolls to end in RTL) */}
         <div 
-            className="hidden md:flex absolute top-0 bottom-0 left-0 z-40 m-auto h-full w-12 cursor-pointer bg-gradient-to-r from-transparent to-black/80 items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300"
+            className="hidden md:flex absolute top-0 bottom-0 left-0 z-40 m-auto h-full w-12 cursor-pointer bg-gradient-to-r from-transparent to-black/80 items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 hover:w-16"
             onClick={() => handleClick('left')}
         >
-            <ChevronLeftIcon className="w-8 h-8 text-white hover:scale-110 transition" />
+            <ChevronLeftIcon className="w-8 h-8 text-white hover:scale-125 transition drop-shadow-lg" />
         </div>
 
       </div>

@@ -51,7 +51,7 @@ export const tmdbService = {
   getOnTheAirTV: () => fetchFromTMDB<MovieResponse>('/tv/on_the_air'),
 
   // General
-  searchMovies: (query: string) => fetchFromTMDB<MovieResponse>('/search/multi', { query }), // Changed to multi search
+  searchMovies: (query: string, page: number = 1) => fetchFromTMDB<MovieResponse>('/search/multi', { query, page: page.toString() }), // Changed to multi search with pagination
   getSimilar: (id: number) => fetchFromTMDB<MovieResponse>(`/movie/${id}/similar`),
 
   // Details

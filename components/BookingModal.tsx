@@ -195,17 +195,17 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
      const currentIndex = steps.findIndex(s => s.id === step);
 
      return (
-        <div className="flex items-center justify-center gap-2 mb-8" dir="rtl">
+        <div className="flex items-center justify-center gap-2 mb-6 md:mb-8" dir="rtl">
            {steps.map((s, idx) => (
               <div key={s.id} className="flex items-center">
                  <div className={`
-                    flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition-all duration-300
+                    flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full text-[10px] md:text-xs font-bold transition-all duration-300
                     ${idx < currentIndex ? 'bg-blue-500 text-white' : idx === currentIndex ? 'bg-white text-blue-600 shadow-lg scale-110' : 'bg-slate-700 text-slate-500'}
                  `}>
                     {idx < currentIndex ? <CheckIcon className="w-4 h-4" /> : idx + 1}
                  </div>
                  {idx < steps.length - 1 && (
-                    <div className={`w-6 h-0.5 mx-1 ${idx < currentIndex ? 'bg-blue-500' : 'bg-slate-700'}`}></div>
+                    <div className={`w-3 md:w-6 h-0.5 mx-0.5 md:mx-1 ${idx < currentIndex ? 'bg-blue-500' : 'bg-slate-700'}`}></div>
                  )}
               </div>
            ))}
@@ -214,14 +214,14 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md transition-all font-poppins" dir="rtl">
-      <div className="relative w-full max-w-4xl bg-[#0f172a] rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[90vh] border border-slate-700 animate-scaleIn">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 md:p-4 bg-slate-900/90 backdrop-blur-md transition-all font-poppins" dir="rtl">
+      <div className="relative w-full max-w-4xl bg-[#0f172a] md:rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full md:h-[90vh] border-0 md:border border-slate-700 animate-scaleIn">
         
         {/* Header */}
-        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-[#1e293b]/50">
+        <div className="p-4 md:p-6 border-b border-slate-800 flex justify-between items-center bg-[#1e293b]/50 pt-10 md:pt-6">
            <div>
-               <h2 className="text-xl font-bold text-white tracking-wide">רכישת כרטיסים</h2>
-               <p className="text-sm text-blue-400 font-medium mt-1">{title}</p>
+               <h2 className="text-lg md:text-xl font-bold text-white tracking-wide">רכישת כרטיסים</h2>
+               <p className="text-xs md:text-sm text-blue-400 font-medium mt-1 truncate max-w-[200px]">{title}</p>
            </div>
            <button onClick={onClose} className="p-2 hover:bg-slate-700 rounded-full transition text-slate-400 hover:text-white">
              <CloseIcon className="w-6 h-6" />
@@ -236,8 +236,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
           {/* STEP 1: SELECT SHOWTIME */}
           {step === 'showtime' && (
             <div className="animate-fadeIn max-w-3xl mx-auto">
-              <h3 className="text-2xl font-bold mb-6 text-center text-white">מתי תרצו לצפות?</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <h3 className="text-xl md:text-2xl font-bold mb-6 text-center text-white">מתי תרצו לצפות?</h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 {showtimes.map(st => (
                   <button
                     key={st.id}
@@ -245,7 +245,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
                     className="flex flex-col items-center p-4 rounded-xl bg-slate-800/50 border border-slate-700 hover:border-blue-500 hover:bg-slate-800 transition group text-center relative overflow-hidden"
                   >
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition"></div>
-                    <span className="font-black text-2xl text-white group-hover:text-blue-400 font-poppins">{st.time}</span>
+                    <span className="font-black text-xl md:text-2xl text-white group-hover:text-blue-400 font-poppins">{st.time}</span>
                     <span className="text-xs text-slate-400 mt-2 font-medium">{st.date}</span>
                     <div className="mt-3 flex items-center gap-2">
                        <span className="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-300 font-bold">{st.hallName}</span>
@@ -283,7 +283,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
                  <button 
                   disabled={selectedSeats.length === 0}
                   onClick={() => setStep('snacks')}
-                  className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+                  className="px-6 md:px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
                 >
                   המשך <ChevronLeftIcon className="w-4 h-4" />
                 </button>
@@ -303,19 +303,19 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
                <SnackBar quantities={snackQuantities} onUpdate={handleSnackUpdate} />
 
                <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#1e293b] border-t border-slate-700 flex justify-between items-center max-w-4xl mx-auto rounded-t-2xl z-50">
-                  <div className="flex gap-8">
+                  <div className="flex gap-4 md:gap-8">
                      <div>
-                        <span className="text-slate-400 text-xs uppercase">כרטיסים</span>
+                        <span className="text-slate-400 text-[10px] md:text-xs uppercase">כרטיסים</span>
                         <span className="block font-bold text-white">{formatPrice(seatsPrice)}</span>
                      </div>
                      <div>
-                        <span className="text-slate-400 text-xs uppercase">מזנון</span>
+                        <span className="text-slate-400 text-[10px] md:text-xs uppercase">מזנון</span>
                         <span className="block font-bold text-yellow-500">{formatPrice(snacksPrice)}</span>
                      </div>
                   </div>
                   <button 
                     onClick={() => setStep('payment')}
-                    className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition flex items-center gap-2"
+                    className="px-6 md:px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition flex items-center gap-2"
                   >
                     לתשלום <ChevronLeftIcon className="w-4 h-4" />
                   </button>
@@ -326,8 +326,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
 
           {/* STEP 4: PAYMENT */}
           {step === 'payment' && (
-            <div className="animate-fadeIn max-w-lg mx-auto">
-              <h3 className="text-2xl font-bold mb-8 text-center text-white">סיכום ותשלום</h3>
+            <div className="animate-fadeIn max-w-lg mx-auto pb-20">
+              <h3 className="text-xl md:text-2xl font-bold mb-8 text-center text-white">סיכום ותשלום</h3>
               
               {isProcessing ? (
                 <div className="flex flex-col items-center justify-center py-20">
@@ -342,8 +342,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ movie, onClose }) => {
               ) : (
                 <div className="space-y-6">
                   
-                  {/* Interactive Credit Card */}
-                  <div className="perspective-1000 w-full max-w-[340px] h-[200px] mx-auto mb-8 relative group">
+                  {/* Interactive Credit Card - Scaled down for mobile */}
+                  <div className="perspective-1000 w-full max-w-[340px] h-[200px] mx-auto mb-8 relative group scale-90 sm:scale-100 origin-center">
                       <div className={`relative w-full h-full transition-all duration-700 ${focusedField === 'cvv' ? '[transform:rotateY(180deg)]' : ''}`} style={{ transformStyle: 'preserve-3d' }}>
                           
                           {/* Front */}

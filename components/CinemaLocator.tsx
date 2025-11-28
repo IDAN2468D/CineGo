@@ -211,10 +211,6 @@ const CinemaLocator: React.FC = () => {
       if (lat && lng && mapInstanceRef.current) {
           mapInstanceRef.current.flyTo([lat, lng], 16, { duration: 1.5 });
           
-          // Find and open popup - simplified for Leaflet
-          // Leaflet doesn't easily expose finding marker by latlng in layergroup without iteration
-          // But visually flying there is the main feedback
-          
           // Optional: iterate and open popup
            markersLayerRef.current.eachLayer((layer: any) => {
               const mLatLng = layer.getLatLng();
@@ -226,31 +222,31 @@ const CinemaLocator: React.FC = () => {
   };
 
   return (
-    <div className="pt-32 px-4 md:px-12 min-h-screen text-right font-poppins pb-20" dir="rtl">
+    <div className="pt-24 md:pt-32 px-4 md:px-12 min-h-screen text-right font-poppins pb-20" dir="rtl">
       
       {/* Header & Search */}
-      <div className="max-w-3xl mx-auto text-center mb-8">
-        <h2 className="text-3xl md:text-5xl font-black text-white mb-6 leading-tight">
+      <div className="max-w-3xl mx-auto text-center mb-6 md:mb-8">
+        <h2 className="text-2xl md:text-5xl font-black text-white mb-4 md:mb-6 leading-tight">
           מצא את הקולנוע הקרוב <span className="text-blue-500">אליך</span>
         </h2>
         
         <div className="relative group max-w-xl mx-auto mb-6">
             <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition duration-700"></div>
-            <div className="relative flex items-center bg-slate-800 border border-slate-700 rounded-full px-4 py-3 shadow-2xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/50 transition">
+            <div className="relative flex items-center bg-slate-800 border border-slate-700 rounded-full px-4 py-2 md:py-3 shadow-2xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/50 transition">
                 <input 
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="חפש מיקום (למשל: סינמה סיטי גלילות)"
-                    className="flex-1 bg-transparent border-none focus:outline-none text-white placeholder-slate-500 px-2"
+                    className="flex-1 bg-transparent border-none focus:outline-none text-white placeholder-slate-500 px-2 text-sm md:text-base"
                 />
                 <button 
                     onClick={handleSearch}
                     disabled={loading}
                     className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-full transition disabled:opacity-50"
                 >
-                    {loading ? <div className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></div> : <SearchIcon className="w-5 h-5" />}
+                    {loading ? <div className="animate-spin w-4 h-4 md:w-5 md:h-5 border-2 border-white/30 border-t-white rounded-full"></div> : <SearchIcon className="w-4 h-4 md:w-5 md:h-5" />}
                 </button>
             </div>
         </div>
@@ -264,7 +260,7 @@ const CinemaLocator: React.FC = () => {
                         key={filter.id}
                         onClick={() => toggleFilter(filter.id)}
                         className={`
-                            flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border
+                            flex items-center gap-1.5 px-2.5 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-bold transition-all border
                             ${isActive 
                                 ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/25' 
                                 : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500 hover:text-white'}
@@ -281,10 +277,15 @@ const CinemaLocator: React.FC = () => {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto h-full">
-        <div className="flex flex-col lg:flex-row gap-8 h-full">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 h-full">
             
-            {/* Left Side: Results List & AI Text */}
-            <div className="lg:w-1/3 flex flex-col gap-6 order-2 lg:order-1 h-[600px] overflow-y-auto custom-scrollbar pr-2">
+            {/* Map (Top on Mobile, Right on Desktop) */}
+            <div className="lg:w-2/3 h-[300px] lg:h-[600px] rounded-2xl lg:rounded-3xl overflow-hidden border border-slate-700 shadow-2xl relative order-1 lg:order-2 shrink-0">
+                <div ref={mapContainerRef} className="w-full h-full bg-slate-900 z-0" />
+            </div>
+
+            {/* List (Bottom on Mobile, Left on Desktop) */}
+            <div className="lg:w-1/3 flex flex-col gap-4 lg:gap-6 order-2 lg:order-1 h-auto lg:h-[600px] lg:overflow-y-auto custom-scrollbar pr-1 lg:pr-2">
                 
                 {/* AI Response or Loading State */}
                 {loading ? (
@@ -294,8 +295,8 @@ const CinemaLocator: React.FC = () => {
                     </div>
                 ) : results ? (
                     <>
-                        <div className="bg-slate-800/50 rounded-3xl p-6 border border-slate-700 shrink-0">
-                            <div className="flex items-center gap-2 mb-3 text-purple-400 font-bold">
+                        <div className="bg-slate-800/50 rounded-2xl md:rounded-3xl p-4 md:p-6 border border-slate-700 shrink-0">
+                            <div className="flex items-center gap-2 mb-2 md:mb-3 text-purple-400 font-bold">
                                 <SparklesIcon className="w-5 h-5" />
                                 <span>המלצות Gemini</span>
                             </div>
@@ -312,7 +313,7 @@ const CinemaLocator: React.FC = () => {
                         )}
 
                         {/* Cards */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 pb-12 lg:pb-0">
                              {filteredChunks.length === 0 && !loading && results && (
                                 <div className="text-center py-8 text-slate-500 bg-slate-800/20 rounded-xl border border-slate-700/50 border-dashed">
                                     <p>לא נמצאו בתי קולנוע עם הסינון שנבחר.</p>
@@ -339,7 +340,7 @@ const CinemaLocator: React.FC = () => {
                                       className={`bg-slate-800 rounded-xl overflow-hidden border border-slate-700 transition-all group flex flex-col
                                         ${hasCoords ? 'cursor-pointer hover:bg-slate-750 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.1)]' : 'opacity-80'}`}
                                     >
-                                        <div className="h-32 w-full overflow-hidden relative">
+                                        <div className="h-28 md:h-32 w-full overflow-hidden relative">
                                             <img 
                                             src={imgUrl} 
                                             alt={title}
@@ -355,14 +356,14 @@ const CinemaLocator: React.FC = () => {
                                             <div className="absolute bottom-2 right-2 flex gap-1">
                                                 {chunk.features.slice(0, 3).map((fid: string) => {
                                                     const f = FILTERS.find(x => x.id === fid);
-                                                    return f ? <span key={fid} className="text-[10px] bg-black/60 backdrop-blur text-white px-1.5 py-0.5 rounded border border-white/10">{f.label}</span> : null;
+                                                    return f ? <span key={fid} className="text-[9px] bg-black/60 backdrop-blur text-white px-1.5 py-0.5 rounded border border-white/10">{f.label}</span> : null;
                                                 })}
                                             </div>
                                         </div>
                                         
-                                        <div className="p-4">
+                                        <div className="p-3 md:p-4">
                                             <div className="flex justify-between items-start">
-                                                <h4 className="font-bold text-white mb-1">{title}</h4>
+                                                <h4 className="font-bold text-white mb-1 text-sm md:text-base">{title}</h4>
                                                 {hasCoords && <MapIcon className="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition" />}
                                             </div>
                                             <p className="text-xs text-slate-400 mb-3 line-clamp-1">{address}</p>
@@ -390,11 +391,6 @@ const CinemaLocator: React.FC = () => {
                         </div>
                     </>
                 ) : null}
-            </div>
-
-            {/* Right Side: Leaflet Map */}
-            <div className="lg:w-2/3 h-[400px] lg:h-[600px] rounded-3xl overflow-hidden border border-slate-700 shadow-2xl relative order-1 lg:order-2">
-                <div ref={mapContainerRef} className="w-full h-full bg-slate-900 z-0" />
             </div>
 
         </div>

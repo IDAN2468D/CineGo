@@ -158,7 +158,7 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, onClose, onUpdateList, o
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" dir="rtl">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 sm:p-6" dir="rtl">
         {/* Backdrop */}
         <div 
           className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm transition-opacity"
@@ -166,7 +166,7 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, onClose, onUpdateList, o
         />
 
         {/* Modal Content */}
-        <div className="relative w-full max-w-6xl bg-[#0f172a] rounded-2xl overflow-hidden shadow-2xl animate-scaleIn text-right flex flex-col max-h-[90vh] border border-slate-700">
+        <div className="relative w-full max-w-6xl bg-[#0f172a] md:rounded-2xl overflow-hidden shadow-2xl animate-scaleIn text-right flex flex-col h-full md:max-h-[90vh] border-0 md:border border-slate-700">
           
           <button 
             onClick={onClose}
@@ -225,23 +225,23 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, onClose, onUpdateList, o
                 )}
              </div>
 
-             <div className="p-6 md:p-10 grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-10">
+             <div className="p-4 md:p-10 grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 md:gap-10 pb-20 md:pb-10">
                 {/* Left Col (Main Info) */}
                 <div>
-                    <h2 className="text-3xl md:text-5xl font-black mb-2 leading-tight text-white font-poppins">{title}</h2>
-                    <div className="flex items-center gap-4 text-sm text-slate-300 mb-8">
+                    <h2 className="text-2xl md:text-5xl font-black mb-2 leading-tight text-white font-poppins">{title}</h2>
+                    <div className="flex items-center gap-4 text-sm text-slate-300 mb-6 md:mb-8">
                       <span className="text-green-400 font-bold">{Math.round(movie.vote_average * 10)}% התאמה</span>
                       <span className="font-poppins">{year}</span>
                       <span className="border border-slate-600 px-1.5 py-0.5 rounded text-xs">HD</span>
                       <span>{movie.genre_ids.map(id => GENRES[id]).slice(0, 2).join(', ')}</span>
                     </div>
 
-                    <div className="flex flex-wrap gap-4 mb-10">
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-8">
                       {isMovie && (
                         <button 
                           onClick={handleBookingClick}
                           disabled={isBookingAnim}
-                          className={`flex items-center gap-2 px-8 py-3.5 font-bold rounded-xl transition-all duration-300 shadow-lg 
+                          className={`flex items-center justify-center gap-2 px-8 py-3.5 font-bold rounded-xl transition-all duration-300 shadow-lg w-full sm:w-auto
                             ${isBookingAnim 
                               ? 'bg-green-500 text-white animate-press shadow-green-500/30 ring-2 ring-green-400/50' 
                               : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20 transform hover:-translate-y-0.5'}`}
@@ -260,26 +260,28 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, onClose, onUpdateList, o
                         </button>
                       )}
                       
-                      <button 
-                        onClick={toggleList}
-                        className={`flex items-center gap-2 px-6 py-3.5 border-2 font-bold rounded-xl transition 
-                          ${isInList ? 'border-green-500 text-green-500 bg-green-500/10' : 'border-slate-600 text-slate-300 hover:border-white hover:text-white'}`}
-                      >
-                        {isInList ? <CheckIcon className="w-5 h-5" /> : <PlusIcon className="w-5 h-5" />}
-                        <span>{isInList ? 'ברשימה שלך' : 'הוסף לרשימה'}</span>
-                      </button>
+                      <div className="flex gap-3 w-full sm:w-auto">
+                        <button 
+                            onClick={toggleList}
+                            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3.5 border-2 font-bold rounded-xl transition 
+                            ${isInList ? 'border-green-500 text-green-500 bg-green-500/10' : 'border-slate-600 text-slate-300 hover:border-white hover:text-white'}`}
+                        >
+                            {isInList ? <CheckIcon className="w-5 h-5" /> : <PlusIcon className="w-5 h-5" />}
+                            <span>{isInList ? 'ברשימה' : 'לרשימה'}</span>
+                        </button>
 
-                      <button 
-                        onClick={handleShare}
-                        className="flex items-center gap-2 px-6 py-3.5 border-2 border-slate-600 text-slate-300 font-bold rounded-xl transition hover:border-white hover:text-white"
-                        title="שתף כותר"
-                      >
-                        <ShareIcon className="w-5 h-5" />
-                        <span className="hidden sm:inline">שתף</span>
-                      </button>
+                        <button 
+                            onClick={handleShare}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-slate-600 text-slate-300 font-bold rounded-xl transition hover:border-white hover:text-white"
+                            title="שתף כותר"
+                        >
+                            <ShareIcon className="w-5 h-5" />
+                            <span className="inline">שתף</span>
+                        </button>
+                      </div>
                     </div>
 
-                    <p className="text-slate-300 leading-relaxed text-lg mb-10 font-light">
+                    <p className="text-slate-300 leading-relaxed text-base md:text-lg mb-8 md:mb-10 font-light">
                       {movie.overview || "אין תקציר זמין עבור כותר זה."}
                     </p>
 
@@ -299,36 +301,36 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, onClose, onUpdateList, o
                            // Actual content
                            <>
                               <div className="flex items-center justify-between mb-4">
-                                 <h3 className="text-xl font-bold text-white">מה הצופים חושבים?</h3>
-                                 <div className="flex gap-3">
+                                 <h3 className="text-lg md:text-xl font-bold text-white">מה הצופים חושבים?</h3>
+                                 <div className="flex gap-2 md:gap-3">
                                    <button 
                                      onClick={() => setShowAllReviews(true)}
                                      className="flex items-center gap-2 px-3 py-2 rounded-full text-xs font-bold text-slate-300 hover:bg-white/10 transition border border-slate-600"
                                    >
                                      <MessageIcon className="w-3.5 h-3.5" />
-                                     כל הביקורות
+                                     <span className="hidden sm:inline">כל הביקורות</span>
                                    </button>
                                    <button 
                                      onClick={handleAiSummary}
                                      disabled={isSummarizing || !!aiSummary}
-                                     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition
+                                     className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-bold transition
                                        ${aiSummary ? 'bg-purple-900/30 text-purple-300 cursor-default border border-purple-500/20' : 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/20'}
                                        ${isSummarizing ? 'opacity-70 cursor-wait' : ''}
                                      `}
                                    >
                                      <SparklesIcon className={`w-4 h-4 ${isSummarizing ? 'animate-spin' : ''}`} />
-                                     {isSummarizing ? 'מנתח ביקורות...' : aiSummary ? 'ניתוח AI הושלם' : 'סיכום ביקורות עם AI'}
+                                     {isSummarizing ? 'מנתח...' : aiSummary ? 'AI הושלם' : 'סיכום AI'}
                                    </button>
                                  </div>
                               </div>
 
                               {aiSummary && (
-                                <div className="bg-gradient-to-br from-purple-900/20 to-black/50 border border-purple-500/30 rounded-2xl p-6 animate-fadeIn">
+                                <div className="bg-gradient-to-br from-purple-900/20 to-black/50 border border-purple-500/30 rounded-2xl p-4 md:p-6 animate-fadeIn">
                                    <div className="flex items-center gap-2 mb-3 text-purple-400 font-bold">
                                      <SparklesIcon className="w-5 h-5" />
                                      <span>סיכום Gemini</span>
                                    </div>
-                                   <p className="text-slate-200 leading-relaxed mb-4">{aiSummary.summary}</p>
+                                   <p className="text-slate-200 leading-relaxed mb-4 text-sm md:text-base">{aiSummary.summary}</p>
                                    <div className="inline-block px-3 py-1 rounded bg-white/5 text-sm border border-white/10">
                                      סנטימנט כללי: <span className="font-bold text-white">{aiSummary.sentiment}</span>
                                    </div>
@@ -349,7 +351,7 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, onClose, onUpdateList, o
                 </div>
 
                 {/* Right Col (Side Details) */}
-                <div className="text-sm space-y-6 text-slate-400">
+                <div className="text-sm space-y-6 text-slate-400 border-t md:border-t-0 border-slate-800 pt-6 md:pt-0">
                     <div>
                       <span className="block text-slate-500 mb-1 uppercase text-xs tracking-wider">כותרת מקורית</span>
                       <span className="text-white font-medium">{originalTitle}</span>
@@ -369,10 +371,10 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, onClose, onUpdateList, o
 
              {/* Reviews Overlay Modal */}
              {showAllReviews && (
-               <div className="absolute inset-0 z-30 bg-[#0f172a] p-6 md:p-10 animate-fadeIn overflow-y-auto">
-                 <div className="max-w-4xl mx-auto">
-                   <div className="flex justify-between items-center mb-8 pb-4 border-b border-slate-700">
-                     <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+               <div className="absolute inset-0 z-30 bg-[#0f172a] p-4 md:p-10 animate-fadeIn overflow-y-auto">
+                 <div className="max-w-4xl mx-auto pb-20">
+                   <div className="flex justify-between items-center mb-6 md:mb-8 pb-4 border-b border-slate-700">
+                     <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-3">
                        <MessageIcon className="w-6 h-6 text-blue-500" />
                        ביקורות צופים ({reviews.length})
                      </h2>
@@ -385,19 +387,19 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, onClose, onUpdateList, o
                      </button>
                    </div>
                    
-                   <div className="space-y-6">
+                   <div className="space-y-4 md:space-y-6">
                      {reviews.length === 0 ? (
                        <p className="text-center text-slate-500 py-10">טרם נכתבו ביקורות על כותר זה.</p>
                      ) : (
                        reviews.map((review) => (
-                         <div key={review.id} className="bg-slate-800/50 p-6 rounded-xl border border-slate-700/50">
+                         <div key={review.id} className="bg-slate-800/50 p-4 md:p-6 rounded-xl border border-slate-700/50">
                            <div className="flex justify-between items-center mb-4">
                              <div className="flex items-center gap-3">
-                               <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 font-bold text-lg uppercase">
+                               <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 font-bold text-base md:text-lg uppercase">
                                  {review.author.charAt(0)}
                                </div>
                                <div>
-                                 <h4 className="font-bold text-white">{review.author}</h4>
+                                 <h4 className="font-bold text-white text-sm md:text-base">{review.author}</h4>
                                  <span className="text-xs text-slate-500">{new Date(review.created_at).toLocaleDateString('he-IL')}</span>
                                </div>
                              </div>
