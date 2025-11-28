@@ -1,7 +1,14 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Access API key from environment
-const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper to safely get the AI instance
+const getGenAI = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.error("CineMind AI Error: API_KEY is missing in environment variables. AI features will not work.");
+    return null;
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 export interface AiRecommendation {
   title: string;
@@ -11,8 +18,11 @@ export interface AiRecommendation {
 
 export const geminiService = {
   getRecommendations: async (query: string): Promise<AiRecommendation[]> => {
+    const ai = getGenAI();
+    if (!ai) return [];
+
     try {
-      const response = await genAI.models.generateContent({
+      const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: `You are a movie expert catering to an Israeli audience. 
         The user wants movie recommendations based on this request: "${query}". 
@@ -53,8 +63,11 @@ export const geminiService = {
   },
 
   summarizeReviews: async (reviewsText: string, movieTitle: string): Promise<{ sentiment: string, summary: string } | null> => {
+    const ai = getGenAI();
+    if (!ai) return null;
+
     try {
-      const response = await genAI.models.generateContent({
+      const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: `You are a movie critic assistant. 
         Summarize the following user reviews for the movie "${movieTitle}" into a concise paragraph in Hebrew.
@@ -87,8 +100,11 @@ export const geminiService = {
   },
 
   findPlaces: async (query: string): Promise<{ text: string; chunks: any[] }> => {
+    const ai = getGenAI();
+    if (!ai) return { text: "שגיאה: מפתח API חסר.", chunks: [] };
+
     try {
-      const response = await genAI.models.generateContent({
+      const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: `Find popular cinema locations and movie theaters in: ${query}. 
         Provide a helpful response in Hebrew describing the top options.`,
